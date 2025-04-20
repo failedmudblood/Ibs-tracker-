@@ -5,25 +5,27 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 from sklearn.linear_model import LogisticRegression
+import json
 
 # Initialize session state
 if "symptom_log" not in st.session_state:
     st.session_state.symptom_log = []
 
-# Connect to Google Sheets
+# Use Google Sheets API with Streamlit Secrets
 def append_to_google_sheet(data_row):
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
+    creds_dict = st.secrets["gcp_service_account"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(creds_dict), scope)
     client = gspread.authorize(creds)
 
-    # Debug: List accessible Google Sheets
+    # Debug: List accessible sheets
     sheet_titles = [sheet.title for sheet in client.openall()]
     st.write("Accessible sheets:", sheet_titles)
 
     sheet = client.open("IBS Tracker Data").sheet1
     sheet.append_row(data_row)
 
-# Setup mock ML model
+# Sample ML model (mock training data)
 model = LogisticRegression()
 X_sample = np.array([
     [5, 7, 5, 2.0, 1, 6, 2],
@@ -35,7 +37,7 @@ X_sample = np.array([
 y_sample = [1, 0, 1, 0, 1]
 model.fit(X_sample, y_sample)
 
-# Helper for levels
+# Mapping for severity levels
 def map_level(level):
     return {
         "None": 0,
@@ -53,7 +55,7 @@ severity_description = {
     "Severe/Extreme": "Severe symptoms requiring strong management or medical advice."
 }
 
-# UI begins
+# Streamlit UI
 st.title("IBS Flare-Up Predictor & Tracker")
 
 # Symptom inputs
@@ -70,12 +72,12 @@ sleep = st.slider("Sleep Hours", 3, 10, 6)
 water = st.slider("Water Intake (L)", 0.5, 5.0, 2.5, 0.1)
 exercise = st.selectbox("Did you exercise today?", ["No", "Yes"])
 
-# Common food triggers
+# Common triggers
 spices = st.multiselect("Any of these consumed today?", [
     "Red chili powder", "Green chili", "Garam masala", "Pickles", "Fried snacks", "Caffeinated drinks"
 ])
 
-# Food detector
+# Food trigger detection
 user_foods = st.text_area("Foods you consumed today (comma-separated)")
 common_triggers = ["pickle", "coffee", "fry", "masala", "sauce", "noodles", "ghee", "spice", "curd"]
 if user_foods:
@@ -86,7 +88,7 @@ if user_foods:
     if detected:
         st.warning("Triggers detected: " + ", ".join(detected))
 
-# Input vector
+# Prepare input
 data = np.array([[
     map_level(food_trigger_level),
     map_level(stress_level),
@@ -97,17 +99,15 @@ data = np.array([[
     len(spices)
 ]])
 
-# Prediction logic
+# Predict
 if st.button("Predict Flare-Up"):
     prediction = model.predict(data)[0]
     flare_status = "Yes" if prediction else "No"
 
-    # Save to sheet
     today = datetime.now().strftime("%Y-%m-%d")
     data_row = [today, flare_status, abdominal_pain, bloating, "-"]
     append_to_google_sheet(data_row)
 
-    # Update local log
     st.session_state.symptom_log.append({
         "flare_up": flare_status,
         "abdominal_pain": abdominal_pain,
@@ -119,7 +119,7 @@ if st.button("Predict Flare-Up"):
     else:
         st.success("Low chance of flare-up. Keep up the good routine!")
 
-# Plot trends
+# Show symptom trend chart
 if st.session_state.symptom_log:
     st.markdown("### Symptom Trends")
     log = st.session_state.symptom_log[-30:]
