@@ -4,6 +4,12 @@ from datetime import datetime
 import streamlit as st
 import numpy as np
 from sklearn.linear_model import LogisticRegression
+def append_to_google_sheet(data_row):
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
+    client = gspread.authorize(creds)
+    sheet = client.open("IBS Tracker Data").sheet1
+    sheet.append_row(data_row)
 
 # Sample training (mock model)
 model = LogisticRegression()
