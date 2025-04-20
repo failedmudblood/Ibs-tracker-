@@ -106,6 +106,10 @@ if st.button("Predict Flare-Up"):
     else:
         st.success("Low chance of flare-up today. Keep maintaining your routine!")
         st.info("Great job! Keep a consistent routine. Try logging what worked well today so you can repeat it.")
+        today = datetime.now().strftime("%Y-%m-%d")
+    data_row = [today, flare_status, abdominal_pain, bloating, "Yes" if rome_positive else "No"]
+
+    append_to_google_sheet(data_row)
 
 # Explanation
 st.markdown("""
