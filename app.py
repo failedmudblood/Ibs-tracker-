@@ -1,9 +1,16 @@
+import streamlit as st
+import numpy as np
+import matplotlib.pyplot as plt
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
-import streamlit as st
-import numpy as np
 from sklearn.linear_model import LogisticRegression
+
+# Initialize session state
+if "symptom_log" not in st.session_state:
+    st.session_state.symptom_log = []
+
+# Connect to Google Sheets
 def append_to_google_sheet(data_row):
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
@@ -11,7 +18,7 @@ def append_to_google_sheet(data_row):
     sheet = client.open("IBS Tracker Data").sheet1
     sheet.append_row(data_row)
 
-# Sample training (mock model)
+# Model
 model = LogisticRegression()
 X_sample = np.array([
     [5, 7, 5, 2.0, 1, 6, 2],
@@ -23,7 +30,7 @@ X_sample = np.array([
 y_sample = [1, 0, 1, 0, 1]
 model.fit(X_sample, y_sample)
 
-# Mapping for classified inputs
+# Helper functions
 def map_level(level):
     return {
         "None": 0,
@@ -33,7 +40,6 @@ def map_level(level):
         "Severe/Extreme": 10
     }[level]
 
-# Descriptions for severity levels
 severity_description = {
     "None": "No noticeable symptoms or triggers.",
     "Mild": "Slight discomfort, manageable without intervention.",
@@ -42,51 +48,52 @@ severity_description = {
     "Severe/Extreme": "Severe symptoms requiring strong management or medical advice."
 }
 
-# Streamlit UI
+# UI
 st.title("IBS Flare-Up Predictor & Manager")
-st.write("Predict, track, and manage your IBS symptoms with intelligent suggestions and real-world tracking.")
 
-# Classified Inputs with descriptions
-food_trigger_level = st.radio("How spicy or IBS-triggering was your food today?", list(severity_description.keys()))
+# Rome IV Criteria
+st.markdown("### Rome IV Criteria Assessment")
+freq = st.radio("Have you experienced abdominal pain at least 1 day/week in last 3 months?", ["Yes", "No"])
+defecation = st.checkbox("Is the pain related to defecation?")
+freq_change = st.checkbox("Is the pain associated with a change in stool frequency?")
+form_change = st.checkbox("Is the pain associated with a change in stool form?")
+onset = st.radio("Did these symptoms begin at least 6 months ago?", ["Yes", "No"])
+rome_positive = freq == "Yes" and onset == "Yes" and sum([defecation, freq_change, form_change]) >= 2
+if rome_positive:
+    st.success("Rome IV: Symptoms may be consistent with IBS.")
+else:
+    st.info("Rome IV: You may not meet criteria. This doesn't replace medical advice.")
+
+# Symptom inputs
+food_trigger_level = st.radio("How spicy was your food today?", list(severity_description.keys()))
 st.caption(severity_description[food_trigger_level])
-
 stress_level = st.radio("Your stress level today?", list(severity_description.keys()))
 st.caption(severity_description[stress_level])
-
-previous_symptom_level = st.radio("How were your IBS symptoms yesterday?", list(severity_description.keys()))
+previous_symptom_level = st.radio("IBS symptoms yesterday?", list(severity_description.keys()))
 st.caption(severity_description[previous_symptom_level])
-
-# Numeric Inputs
-sleep = st.slider("Sleep Quality (Hours)", 3, 10, 6)
-water = st.slider("Water Intake (Liters)", 0.5, 5.0, 2.5, 0.1)
+abdominal_pain = st.slider("Abdominal Pain (0–10)", 0, 10, 4)
+bloating = st.slider("Bloating (0–10)", 0, 10, 4)
+sleep = st.slider("Sleep Hours", 3, 10, 6)
+water = st.slider("Water Intake (L)", 0.5, 5.0, 2.5, 0.1)
 exercise = st.selectbox("Did you exercise today?", ["No", "Yes"])
 
-# Indian food triggers
-st.markdown("**Did you consume any of these common IBS triggers?**")
-spices = st.multiselect("Select all that apply:", [
+# Common triggers
+spices = st.multiselect("Any of these consumed today?", [
     "Red chili powder", "Green chili", "Garam masala", "Pickles", "Fried snacks", "Caffeinated drinks"
 ])
-spice_score = len(spices)
 
-# Food trigger detector
-st.markdown("**Enter the foods you consumed today:**")
-user_foods = st.text_area("Separate items by commas (e.g., rice, dal, pickle, coffee)")
-detected_triggers = []
-common_triggers = ["pickle", "coffee", "fry", "masala", "sauce", "noodles"]
+# Food detector
+user_foods = st.text_area("Foods you consumed today (comma-separated)")
+common_triggers = ["pickle", "coffee", "fry", "masala", "sauce", "noodles", "ghee", "spice", "curd"]
 if user_foods:
-    foods = [f.strip().lower() for f in user_foods.split(",")]
-    for food in foods:
-        if any(trigger in food for trigger in common_triggers):
-            detected_triggers.append(food)
-            if food not in spices:
-                spices.append(food)
-    if detected_triggers:
-        st.warning(f"Possible triggers detected: {', '.join(detected_triggers)}")
+    detected = [f for f in user_foods.lower().split(",") if any(t in f for t in common_triggers)]
+    for trigger in detected:
+        if trigger not in spices:
+            spices.append(trigger)
+    if detected:
+        st.warning("Triggers detected: " + ", ".join(detected))
 
-# Custom food trigger option
-st.text_input("Want to note a possible trigger food today? (Optional)", key="food_note")
-
-# Convert inputs
+# Model input
 data = np.array([[
     map_level(food_trigger_level),
     map_level(stress_level),
@@ -97,30 +104,43 @@ data = np.array([[
     len(spices)
 ]])
 
-# Prediction Button
+# Prediction
 if st.button("Predict Flare-Up"):
     prediction = model.predict(data)[0]
-    if prediction:
-        st.error("High chance of flare-up today. Consider reducing stress, avoiding spicy foods, and hydrating well.")
-        st.info("Daily Tip: Try a bland diet today, stay hydrated, and avoid known triggers. A short walk or breathing exercise may help.")
-    else:
-        st.success("Low chance of flare-up today. Keep maintaining your routine!")
-        st.info("Great job! Keep a consistent routine. Try logging what worked well today so you can repeat it.")
-        today = datetime.now().strftime("%Y-%m-%d")
-    data_row = [today, flare_status, abdominal_pain, bloating, "Yes" if rome_positive else "No"]
+    flare_status = "Yes" if prediction else "No"
 
+    # Save to Google Sheet
+    today = datetime.now().strftime("%Y-%m-%d")
+    data_row = [today, flare_status, abdominal_pain, bloating, "Yes" if rome_positive else "No"]
     append_to_google_sheet(data_row)
 
-# Explanation
-st.markdown("""
-### How is this calculated?
+    st.session_state.symptom_log.append({
+        "flare_up": flare_status,
+        "abdominal_pain": abdominal_pain,
+        "bloating": bloating,
+        "rome_iv_positive": rome_positive
+    })
 
-This app uses a machine learning model trained on symptom and lifestyle data to estimate your risk of an IBS flare-up.
-We look at stress, diet, sleep, hydration, and your recent symptom history.
-It uses both current data and recognized scientific patterns (e.g., high spice and stress correlation with IBS).
+    if prediction:
+        st.error("High chance of flare-up. Try a bland diet, hydrate, reduce stress.")
+    else:
+        st.success("Low chance of flare-up. Keep up the good routine!")
 
-> Research-backed logic: High-stress, low-sleep, and high-spice consumption days are more likely to result in flare-ups. 
-> This model improves the more you use it, offering smarter alerts and behavior tips.
+# Charts
+if st.session_state.symptom_log:
+    st.markdown("### Symptom Trends")
+    log = st.session_state.symptom_log[-30:]
+    days = list(range(1, len(log) + 1))
+    pain = [entry["abdominal_pain"] for entry in log]
+    bloat = [entry["bloating"] for entry in log]
+    flares = [1 if entry["flare_up"] == "Yes" else 0 for entry in log]
 
-This is not a diagnosis — just a tool to help you manage patterns and habits.
-""")
+    fig, ax = plt.subplots()
+    ax.plot(days, pain, label="Abdominal Pain", color="red")
+    ax.plot(days, bloat, label="Bloating", color="blue")
+    ax.plot(days, flares, label="Flare-Ups", color="green", linestyle="--")
+    ax.set_xlabel("Days")
+    ax.set_ylabel("Severity")
+    ax.set_title("IBS Symptom Trends")
+    ax.legend()
+    st.pyplot(fig)
