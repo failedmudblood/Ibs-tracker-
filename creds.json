@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "astute-winter-457409-m3",
+  "private_key_id": "8d8dff77e4f691a35c6fc0978875c39357d444ef",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCsjthCHEZvBfsz\nV83gXs8FrYaUR0tG1CRY64MLZsKFYcjadICRMf/+6shgdh5u+dI6Efel6mDGnjTq\ngZoMUIU+1Eqb1gFuIJbjEKkxFyEMAv8k+6DfcWjXOcX42QuqIS1tVWi0VvHOD5de\nyjt/WbZIS7JyOGAB87eMoMHl8hSE57Ajaxgt2tmP/3aYqI2/6Y4LJPxDh8n2CxAA\nzKCOOELvw7XoKdc8GVZ6lfA+jD21elc9et48WCb21+olff3V3Kf/n2zdYD3VtmDR\nB+R5EyGIlaWD5A8iu/37r/8TOGiwzh3e6gx6WJBBJzt256JQByVsWC6Z4SWTPCWM\ngBeMQD3BAgMBAAECggEABO4l5qmpJ4XruflRxA3ha1+cX0M0NudbzICaI2rBtw7m\nrrsyazObBV0O8ZaeYvxXUdpukXqDXllp2KNwU9a/H97v7MjuDIf4168DrofjJVU2\nlgdsfsXeQXwAmI4XA7rj8eJFVhW/3evbHtW3YnmdOC6VgCb1M0kT3vw+3gOPK4bp\nGevoXpzzqanEaShxYRU2rROKdQRnsbZvrkvc3kIraWVaNgcfytxDGK/q9efJ80Ie\nb++SHNx3n+W3PVNU7jLlMCL1yfcRoJB8mDFdBhZhVjKqc5uKMnYS21tX3ZhOWiIE\nkPBUqvIUs7Z6kmfh+jSTmzKB0YgetjqWrSzFzmQCqwKBgQDiPy4D/8VJaqcaSblv\nwTrL8rt9tEL0L7jutKO5nokkaisUAT9UbrVYSw2uRNLjROKeg5l/2aF//83Wl6UR\nMP+9J4ex82vKjsLA8YS7N/WaTjJTj4vngHv79IEKdU1dbGIvZcMvksEw16ab1/4K\n8VkW/pN4SthawCfu/GmNwb7pCwKBgQDDQC26FOJ2SnkYB3Ooanhg2dXEwVNdymeK\nZmc4z/X7poIySkMyEuctbYflTnQgZchdmP/IAfnrEWECQQDg81yOjoT54bP57H+q\n/an1ciQZ2EtOXMvXyq5LP7AfE1VY/5pjO/xUbLfkDfJU/WOgPotbObuMz2sxuURZ\nmClFV7Br4wKBgC9lLt2Vmh2sIv9lzFv17bxFyDMoLRJ8YNBYtSewZ2hieU3CiSLF\n4mVxq5cDQe5sQtEUHnbi/2sSCmvW7rRwQFK+0jVcGguf5nqG3dhee6vsj6xjmNpR\nVyfL67BmLGPSzarCNaZkpuX1dyiUkdp2/sPLZtc/Tp2MPZFZ/T6+BKFLAoGBAIgY\nRwdKoWOUm32NTCfbNtdDX4bKvoJEoBFPOanXAv2K3XuSWe4gUPVQQIYsPjOK3rOm\n/rr57arVLUo15xflaeGQI85NbXbKS17zezEzg0hkhHE1q3xZsU2QMgInJrlnSMTc\nvhBWy4Lx2bU1/ehnUBmhT0JiHbTGD4dn0XSdH8LDAoGAPOBzMqVQF/7O16h1viQ1\nRSxaog1yHKK4zmpV6dBAcsEdCB84L4yLRv9Td1KoeXzQGrqSf8QSTwOQF3lQkx/5\nWu8gRk8JgIFzBd1O8zNGOtSfhNaOuPDObG65ISRbyR8/Qe0oJEvZzBnqT48GhSfL\nH1O6Arav0ru+OaZJq7EoCZE=\n-----END PRIVATE KEY-----\n",
+  "client_email": "ibstracker-service@astute-winter-457409-m3.iam.gserviceaccount.com",
+  "client_id": "114697937111030990292",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/ibstracker-service%40astute-winter-457409-m3.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
