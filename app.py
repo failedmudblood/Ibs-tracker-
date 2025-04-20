@@ -15,10 +15,15 @@ def append_to_google_sheet(data_row):
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
     client = gspread.authorize(creds)
+
+    # Debug: List accessible Google Sheets
+    sheet_titles = [sheet.title for sheet in client.openall()]
+    st.write("Accessible sheets:", sheet_titles)
+
     sheet = client.open("IBS Tracker Data").sheet1
     sheet.append_row(data_row)
 
-# Model
+# Setup mock ML model
 model = LogisticRegression()
 X_sample = np.array([
     [5, 7, 5, 2.0, 1, 6, 2],
@@ -30,7 +35,7 @@ X_sample = np.array([
 y_sample = [1, 0, 1, 0, 1]
 model.fit(X_sample, y_sample)
 
-# Helper functions
+# Helper for levels
 def map_level(level):
     return {
         "None": 0,
@@ -48,21 +53,8 @@ severity_description = {
     "Severe/Extreme": "Severe symptoms requiring strong management or medical advice."
 }
 
-# UI
-st.title("IBS Flare-Up Predictor & Manager")
-
-# Rome IV Criteria
-st.markdown("### Rome IV Criteria Assessment")
-freq = st.radio("Have you experienced abdominal pain at least 1 day/week in last 3 months?", ["Yes", "No"])
-defecation = st.checkbox("Is the pain related to defecation?")
-freq_change = st.checkbox("Is the pain associated with a change in stool frequency?")
-form_change = st.checkbox("Is the pain associated with a change in stool form?")
-onset = st.radio("Did these symptoms begin at least 6 months ago?", ["Yes", "No"])
-rome_positive = freq == "Yes" and onset == "Yes" and sum([defecation, freq_change, form_change]) >= 2
-if rome_positive:
-    st.success("Rome IV: Symptoms may be consistent with IBS.")
-else:
-    st.info("Rome IV: You may not meet criteria. This doesn't replace medical advice.")
+# UI begins
+st.title("IBS Flare-Up Predictor & Tracker")
 
 # Symptom inputs
 food_trigger_level = st.radio("How spicy was your food today?", list(severity_description.keys()))
@@ -71,13 +63,14 @@ stress_level = st.radio("Your stress level today?", list(severity_description.ke
 st.caption(severity_description[stress_level])
 previous_symptom_level = st.radio("IBS symptoms yesterday?", list(severity_description.keys()))
 st.caption(severity_description[previous_symptom_level])
+
 abdominal_pain = st.slider("Abdominal Pain (0–10)", 0, 10, 4)
 bloating = st.slider("Bloating (0–10)", 0, 10, 4)
 sleep = st.slider("Sleep Hours", 3, 10, 6)
 water = st.slider("Water Intake (L)", 0.5, 5.0, 2.5, 0.1)
 exercise = st.selectbox("Did you exercise today?", ["No", "Yes"])
 
-# Common triggers
+# Common food triggers
 spices = st.multiselect("Any of these consumed today?", [
     "Red chili powder", "Green chili", "Garam masala", "Pickles", "Fried snacks", "Caffeinated drinks"
 ])
@@ -86,14 +79,14 @@ spices = st.multiselect("Any of these consumed today?", [
 user_foods = st.text_area("Foods you consumed today (comma-separated)")
 common_triggers = ["pickle", "coffee", "fry", "masala", "sauce", "noodles", "ghee", "spice", "curd"]
 if user_foods:
-    detected = [f for f in user_foods.lower().split(",") if any(t in f for t in common_triggers)]
+    detected = [f.strip() for f in user_foods.lower().split(",") if any(t in f for t in common_triggers)]
     for trigger in detected:
         if trigger not in spices:
             spices.append(trigger)
     if detected:
         st.warning("Triggers detected: " + ", ".join(detected))
 
-# Model input
+# Input vector
 data = np.array([[
     map_level(food_trigger_level),
     map_level(stress_level),
@@ -104,21 +97,21 @@ data = np.array([[
     len(spices)
 ]])
 
-# Prediction
+# Prediction logic
 if st.button("Predict Flare-Up"):
     prediction = model.predict(data)[0]
     flare_status = "Yes" if prediction else "No"
 
-    # Save to Google Sheet
+    # Save to sheet
     today = datetime.now().strftime("%Y-%m-%d")
-    data_row = [today, flare_status, abdominal_pain, bloating, "Yes" if rome_positive else "No"]
+    data_row = [today, flare_status, abdominal_pain, bloating, "-"]
     append_to_google_sheet(data_row)
 
+    # Update local log
     st.session_state.symptom_log.append({
         "flare_up": flare_status,
         "abdominal_pain": abdominal_pain,
-        "bloating": bloating,
-        "rome_iv_positive": rome_positive
+        "bloating": bloating
     })
 
     if prediction:
@@ -126,7 +119,7 @@ if st.button("Predict Flare-Up"):
     else:
         st.success("Low chance of flare-up. Keep up the good routine!")
 
-# Charts
+# Plot trends
 if st.session_state.symptom_log:
     st.markdown("### Symptom Trends")
     log = st.session_state.symptom_log[-30:]
